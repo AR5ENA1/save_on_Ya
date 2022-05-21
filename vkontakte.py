@@ -1,12 +1,4 @@
 import requests
-import logging
-
-logging.basicConfig(
-    level='INFO',
-    format='%(asctime)s %(module)s %(levelname)s %(lineno)d %(message)s'
-)
-logger = logging.getLogger(__name__)
-logging.getLogger('urllib3.connection').setLevel('WARNING')
 
 class Vk:
     url = 'https://api.vk.com/method/'
@@ -17,38 +9,50 @@ class Vk:
             'v': version
         }
 
-    def search_foto(self, album_id):
-        logger.info('Поиск фотографий начался')
-        sort_foto = {}
-        id = input("Пожалуйста, введите ID аккаунта: ")
-        search_foto_url = self.url + 'photos.get'
-        search_foto_params = {
+    def search_photo(self, add_param, vk_metod='photos.get'):
+        sort_photo = {}
+        id = input("Пожалуйста, введите ID аккаунта:\n>>> ")
+        print('Поиск фотографий начался')
+        search_photo_url = self.url + vk_metod
+        search_photo_params = {
             'owner_id': id,
-            'album_id': album_id,
             'extended': '1',
         }
-        fotos = requests.get(search_foto_url, params={**self.params, **search_foto_params})
-        if fotos.status_code != 200:
-            raise SystemExit(f"Error {fotos.json()['error']['error_code']}: {fotos.json()['error']['error_msg']}")
+        photos = requests.get(search_photo_url, params={**self.params, **search_photo_params, **add_param})
+        if photos.status_code != 200:
+            raise SystemExit(f"Error {photos.json()['error']['error_code']}: {photos.json()['error']['error_msg']}")
         else:
-            if 'error' in fotos.json():
-                raise SystemExit(f"Error: {fotos.json()['error']['error_msg']}")
+            if 'error' in photos.json():
+                raise SystemExit(f"Error: {photos.json()['error']['error_msg']}")
             else:
-                for param_foto in fotos.json()['response']['items']:
-                    sorted_sizes = max(param_foto['sizes'], key=lambda x: x['height'] * x['width'])
-                    if param_foto['likes']['count'] in sort_foto.keys():
-                        sort_foto[param_foto['date']] = sorted_sizes['url']
+                for param_photo in photos.json()['response']['items']:
+                    sorted_sizes = max(param_photo['sizes'], key=lambda x: x['height'] * x['width'])
+                    if param_photo['likes']['count'] in sort_photo.keys():
+                        sort_photo[param_photo['date']] = sorted_sizes['url']
                     else:
-                        sort_foto[param_foto['likes']['count']] = sorted_sizes['url']
-                logger.info(f'Найдено {len(sort_foto)} фотографий')
-                return sort_foto
+                        sort_photo[param_photo['likes']['count']] = sorted_sizes['url']
+                print(f'Найдено {len(sort_photo)} фотографий')
+                return sort_photo
 
-    def foto_on_avatar(self):
-        logger.info('Поиск фотографий аватарке в Вконтакте')
-        sort_foto = self.search_foto('profile')
-        return sort_foto
+    def photo_on_avatar(self):
+        print('Поиск фотографий на аватарке')
+        add_param = {'album_id': 'profile'}
+        sort_photo = self.search_photo(add_param)
+        return sort_photo
 
-    def foto_on_wall(self):
-        logger.info('Поиск фотографий на стене в Вконтакте')
-        sort_foto = self.search_foto('wall')
-        return sort_foto
+    def photo_on_wall(self):
+        print('Поиск фотографий на стене')
+        add_param = {'album_id': 'wall'}
+        sort_photo = self.search_photo(add_param)
+        return sort_photo
+
+    def photo_in_album(self):
+        print('Поиск фотографий в альбомах')
+        add_param = {
+            'photo_sizes': '1',
+            'no_service_albums': '1',
+            'count': '200'
+        }
+        sort_photo = self.search_photo(add_param, 'photos.getAll')
+        return sort_photo
+
