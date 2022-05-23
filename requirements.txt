@@ -1,0 +1,12 @@
+Package            Version
+------------------ ---------
+certifi            2021.10.8
+charset-normalizer 2.0.12
+colorama           0.4.4
+idna               3.3
+pip                22.1
+requests           2.27.1
+setuptools         60.2.0
+tqdm               4.64.0
+urllib3            1.26.9
+wheel              0.37.1

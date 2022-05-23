@@ -1,6 +1,5 @@
 import requests
 import hashlib
-from  pprint import pprint
 
 class Ok:
     url = 'https://api.ok.ru/api/'
@@ -14,63 +13,61 @@ class Ok:
             'session_secret_key': key['session_secret_key']
         }
 
-    def search_avatar(self):
-        search_avatar_url = self.url + 'photos/getPhotos'
-        search_avatar_params = {
-            'fid': input('Введите ID: '),
-            'fields': 'user_photo.PIC_MAX, user_photo.LIKE_SUMMARY'
-        }
-        all_params = {**self.params, **search_avatar_params}
+    def search(self, urls, add_params):
+        search_url = self.url + urls
+        all_params = {**self.params, **add_params}
         full_params = self.get_sig(all_params)
+        result = requests.get(search_url, params=full_params)
+        if result.status_code != 200:
+            raise SystemExit(f"Error {result.json()['error_code']}: {result.json()['error_msg']}")
+        else:
+            if 'error_code' in result.json():
+                raise SystemExit(f"Error {result.json()['error_code']}: {result.json()['error_msg']}")
+        return result
 
-        avatars = requests.get(search_avatar_url, params=full_params)
-        sort_foto = {}
-        for foto in avatars.json()['photos']:
-            sort_foto[foto['like_summary']['count']] = foto['pic_max']
-        return sort_foto
-
-    def search_albums(self):
-        search_avatar_url = self.url + 'photos/getAlbums'
+    def search_avatar(self, id, add_params=""):
+        print('Поиск фотографий начался')
+        search_avatar_url = 'photos/getPhotos'
         search_avatar_params = {
-            'fid': input('Введите ID: '),
+            'fid': id,
+            'fields': 'user_photo.PIC_MAX, user_photo.LIKE_SUMMARY, user_photo.ID',
+            'count': '100',
+            'aid': add_params
+        }
+        photos = self.search(search_avatar_url, search_avatar_params)
+        sort_photos = {}
+        for photo in photos.json()['photos']:
+            if photo['like_summary']['count'] in sort_photos:
+                sort_photos[photo['id']] = photo['pic_max']
+            else:
+                sort_photos[photo['like_summary']['count']] = photo['pic_max']
+        print(f'Найдено {len(sort_photos)} фотографий')
+        return sort_photos
+
+    def search_albums(self, id):
+        print('Поиск альбомов начался')
+        search_albums_url = 'photos/getAlbums'
+        search_albums_params = {
+            'fid': id,
             'format': 'json'
         }
-        all_params = {**self.params, **search_avatar_params}
-        full_params = self.get_sig(all_params)
-
-        avatars = requests.get(search_avatar_url, params=full_params)
+        albums = self.search(search_albums_url, search_albums_params)
         sort_albums = {}
         k = 1
-        for album in avatars.json()['albums']:
+        for album in albums.json()['albums']:
             sort_albums[str(k)] = {'title':album['title'], 'aid': album['aid']}
             k += 1
+        print(f'Найдено {len(sort_albums)} альбомов')
         return sort_albums
 
-    def search_foto_in_albums(self):
-        sort_albums = self.search_albums()
-        pprint(sort_albums)
-        print(f'Введите номер альбом, фотографии которого необходимо сохранить: ')
+    def search_photo_in_albums(self, id):
+        sort_albums = self.search_albums(id)
+        print(f'Введите номер альбома, фотографии которого необходимо сохранить: ')
         for album in sort_albums.keys():
             print(f"{album} - {sort_albums[album]['title']}")
-        num_album = input()
-        search_foto_in_albums_url = self.url + 'photos/getPhotos'
-        search_foto_in_album_params = {
-            'fid': '548962898298',
-            'aid': sort_albums[num_album]['aid'],
-            'fields': 'user_photo.PIC_MAX, user_photo.LIKE_SUMMARY, user_photo.ID',
-            'count': '100'
-        }
-        all_params = {**self.params, **search_foto_in_album_params}
-        full_params = self.get_sig(all_params)
-
-        photos = requests.get(search_foto_in_albums_url, params=full_params)
-
-        sort_foto = {}
-        for photo in photos.json()['photos']:
-            if photo['like_summary']['count'] in sort_foto:
-                sort_foto[photo['id']] = photo['pic_max']
-            else:
-                sort_foto[photo['like_summary']['count']] = photo['pic_max']
+        num_album = input('>>> ')
+        search_foto_in_album_params = sort_albums[num_album]['aid']
+        sort_foto = self.search_avatar(id, search_foto_in_album_params)
         return sort_foto
 
     def get_sig(self, all_params):
@@ -83,83 +80,3 @@ class Ok:
         sig = hashlib.md5(f"{string}{session_secret_key}".encode()).hexdigest()
         full_params.update(sig=sig)
         return full_params
-
-# 548962898298
-# user_photo:[
-# ACCESS_POLICIES
-# ALBUM_ID
-# ANIMATED_PHOTO_SRC
-# AUTHOR_REF
-# BLOCKED
-# BOOKMARKED
-# COMMENTS_COUNT
-# COMMENT_ALLOWED
-# CONTEXT
-# CREATED_MS
-# CROP_HEIGHT
-# CROP_SIZE
-# CROP_WIDTH
-# CROP_X
-# CROP_Y
-# DELETED
-# DELETE_ALLOWED
-# DEPTH_MAP
-# DISCUSSION_SUMMARY
-# HAS_FRAME
-# ID
-# LIKED_IT
-# LIKE_ALLOWED
-# LIKE_COUNT
-# LIKE_SUMMARY
-# MARK_ALLOWED
-# MARK_AS_SPAM_ALLOWED
-# MARK_AVG
-# MARK_BONUS_COUNT
-# MARK_COUNT
-# MODERATION_STATUS
-# MODIFY_ALLOWED
-# OBS_SOURCE_ID
-# OFFSET
-# OWNER_REF
-# PHOTO_ID
-# PIC1024MAX
-# PIC1024X768
-# PIC128MAX
-# PIC128X128
-# PIC160X120
-# PIC176X176
-# PIC180MIN
-# PIC190X190
-# PIC240MIN
-# PIC320MIN
-# PIC50X50
-# PIC640X480
-# PICGIF
-# PICMP4
-# PICWEBM
-# PIC_BASE
-# PIC_MAX
-# PINS
-# PINS_CONFIRMED
-# PINS_FOR_CONFIRMATION
-# PIN_USERS_UNCONFIRMED
-# PREVIEW_DATA
-# REF
-# REMOVE_FRAME
-# RESHARE_SUMMARY
-# ROTATION_ANGLE
-# SEND_AS_GIFT_AVAILABLE
-# SENSITIVE
-# STANDARD_HEIGHT
-# STANDARD_WIDTH
-# TAG_ALLOWED
-# TAG_COUNT
-# TAG_COUNT_UNCONFIRMED
-# TEXT
-# TEXT_DETECTED
-# TEXT_TOKENS
-# TYPE
-# USER_HAS_SEEN_PHOTO
-# USER_ID
-# VIEWER_MARK
-# WIDGETS
