@@ -2,7 +2,6 @@ from tqdm import tqdm
 import requests
 import json
 
-
 class Yandex_disk:
     url = 'https://cloud-api.yandex.net/v1/disk/resources'
 
@@ -24,12 +23,12 @@ class Yandex_disk:
             raise SystemExit(f"Error: {req.json()['message']}")
         return folder
 
-    def save_on_yandex_disk(self, sort_avatars, folder=None):
+    def save_on_yandex_disk(self, photos, folder=None):
         print('Началась запись фотографий на yandex_disk')
         params = {
             'path': folder
         }
-        for name, photo in tqdm(sort_avatars.items()):
+        for name, photo in tqdm(photos.items()):
             params = {
                 'path': f'{folder}/{name}.jpg',
                 'url': photo

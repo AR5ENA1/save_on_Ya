@@ -25,11 +25,11 @@ class Ok:
                 raise SystemExit(f"Error {result.json()['error_code']}: {result.json()['error_msg']}")
         return result
 
-    def search_avatar(self, id, add_params=""):
+    def search_avatar(self, profile, add_params=""):
         print('Поиск фотографий начался')
         search_avatar_url = 'photos/getPhotos'
         search_avatar_params = {
-            'fid': id,
+            'fid': profile,
             'fields': 'user_photo.PIC_MAX, user_photo.LIKE_SUMMARY, user_photo.ID',
             'count': '100',
             'aid': add_params
@@ -44,11 +44,11 @@ class Ok:
         print(f'Найдено {len(sort_photos)} фотографий')
         return sort_photos
 
-    def search_albums(self, id):
+    def search_albums(self, profile):
         print('Поиск альбомов начался')
         search_albums_url = 'photos/getAlbums'
         search_albums_params = {
-            'fid': id,
+            'fid': profile,
             'format': 'json'
         }
         albums = self.search(search_albums_url, search_albums_params)
@@ -60,14 +60,14 @@ class Ok:
         print(f'Найдено {len(sort_albums)} альбомов')
         return sort_albums
 
-    def search_photo_in_albums(self, id):
-        sort_albums = self.search_albums(id)
+    def search_photo_in_albums(self, profile):
+        sort_albums = self.search_albums(profile)
         print(f'Введите номер альбома, фотографии которого необходимо сохранить: ')
         for album in sort_albums.keys():
             print(f"{album} - {sort_albums[album]['title']}")
         num_album = input('>>> ')
         search_foto_in_album_params = sort_albums[num_album]['aid']
-        sort_foto = self.search_avatar(id, search_foto_in_album_params)
+        sort_foto = self.search_avatar(profile, search_foto_in_album_params)
         return sort_foto
 
     def get_sig(self, all_params):
